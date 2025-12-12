@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ML&PLN Coach (All-in-one)</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#0f1a2e;
+      --panel2:#0c1526;
+      --text:#e8eefc;
+      --muted:#b7c3e6;
+      --stroke:rgba(232,238,252,.12);
+      --accent:#7dd3fc;
+      --accent2:#a78bfa;
+      --shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", sans-serif;
+      background: radial-gradient(1200px 700px at 20% 0%, rgba(167,139,250,.25), transparent 55%),
+                  radial-gradient(1200px 700px at 80% 10%, rgba(125,211,252,.20), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+    }
+    .app{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    .topbar{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid var(--stroke);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      box-shadow: var(--shadow);
+    }
+    .brand{display:flex; gap:12px; align-items:center;}
+    .logo{
+      width:40px;height:40px;border-radius:12px;
+      background: linear-gradient(135deg, rgba(125,211,252,.28), rgba(167,139,250,.25));
+      border:1px solid var(--stroke);
+      display:flex;align-items:center;justify-content:center;
+      font-size:20px;
+    }
+    .title{font-weight:750; letter-spacing:.2px}
+    .subtitle{font-size:12px; color: var(--muted); margin-top:2px}
+    .status{
+      font-size:12px;
+      color: var(--muted);
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.03);
+      user-select:none;
+    }
+    .chat{
+      flex:1;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid var(--stroke);
+      border-radius: 16px;
+      padding: 14px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      box-shadow: var(--shadow);
+    }
+    .messages{
+      flex:1;
+      overflow:auto;
+      padding: 6px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .msg{
+      max-width: 82%;
+      border:1px solid var(--stroke);
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.03);
+    }
+    .msg.user{
+      margin-left:auto;
+      background: rgba(125,211,252,.10);
+      border-color: rgba(125,211,252,.22);
+    }
+    .msg.bot{
+      margin-right:auto;
+      background: rgba(167,139,250,.10);
+      border-color: rgba(167,139,250,.22);
+    }
+    .meta{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom:6px;
+    }
+    .content{font-size:14px; line-height:1.45; white-space:pre-wrap}
+    .content code{
+      display:block;
+      padding:10px 12px;
+      margin-top:8px;
+      background: var(--panel2);
+      border:1px solid var(--stroke);
+      border-radius: 12px;
+      overflow:auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12.5px;
+    }
+    .quick{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      padding: 0 6px;
+    }
+    .chip{
+      border-radius: 999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 12px;
+      cursor:pointer;
+    }
+    .chip:hover{border-color: rgba(125,211,252,.35)}
+    .composer{
+      display:flex;
+      gap:10px;
+      padding: 0 6px 4px;
+    }
+    .composer input{
+      flex:1;
+      background: var(--panel);
+      border:1px solid var(--stroke);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 12px 12px;
+      outline:none;
+    }
+    .composer input:focus{border-color: rgba(125,211,252,.45)}
+    .composer button{
+      border:0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      cursor:pointer;
+      color: #07101d;
+      font-weight: 750;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+    }
+    .footer{
+      color: var(--muted);
+      font-size: 12px;
+      text-align:center;
+      opacity:.95;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">🤖</div>
+        <div>
+          <div class="title">ML&PLN Coach</div>
+          <div class="subtitle">Aprenda Machine Learning e PLN com microaulas e quizzes</div>
+        </div>
+      </div>
+      <div class="status" id="statusPill">Modo: Local</div>
+    </header>
+
+    <main class="chat">
+      <div class="messages" id="messages"></div>
+
+      <div class="quick">
+        <button class="chip" data-quick="trilha ml">Trilha ML</button>
+        <button class="chip" data-quick="trilha pln">Trilha PLN</button>
+        <button class="chip" data-quick="quiz ml">Quiz ML</button>
+        <button class="chip" data-quick="quiz pln">Quiz PLN</button>
+        <button class="chip" data-quick="projeto guiado">Projeto guiado</button>
+        <button class="chip" data-quick="me explica simples">Explica simples</button>
+        <button class="chip" data-quick="exemplo python">Exemplo Python</button>
+        <button class="chip" data-quick="reset">Reset</button>
+      </div>
+
+      <form class="composer" id="composer">
+        <input
+          id="input"
+          type="text"
+          placeholder="Digite: 'overfitting', 'embeddings', 'trilha pln', 'quiz ml'..."
+          autocomplete="off"
+        />
+        <button id="send" type="submit">Enviar</button>
+      </form>
+    </main>
+
+    <footer class="footer">
+      <span>💡 Dica: escreva “glossário: embeddings” ou “me explica simples”.</span>
+    </footer>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const messagesEl = $("messages");
+    const composer = $("composer");
+    const inputEl = $("input");
+
+    const state = {
+      user: { name:null, level:null, goal:null, style:null, time:null },
+      onboardingStep: 0,
+      lastTopic: null,
+      quiz: null
+    };
+
+    const KNOWLEDGE = {
+      glossary: {
+        "machine learning": "Área da IA em que modelos aprendem padrões a partir de dados para prever/decidir sem regras fixas.",
+        "supervisionado": "Aprendizado com exemplos rotulados (X → y). Ex.: classificar spam (spam/não spam).",
+        "não supervisionado": "Aprendizado sem rótulos, buscando estrutura/padrões. Ex.: clustering de clientes.",
+        "overfitting": "Quando o modelo “decora” o treino e perde capacidade de generalizar para dados novos.",
+        "underfitting": "Quando o modelo é simples demais e não aprende nem o padrão do treino.",
+        "validação": "Processo para medir generalização. Ex.: divisão treino/teste ou cross-validation.",
+        "precision": "Entre os positivos previstos, quantos são realmente positivos.",
+        "recall": "Entre os positivos reais, quantos o modelo encontrou.",
+        "f1": "Média harmônica entre precision e recall. Útil quando há desbalanceamento.",
+        "pln": "Processamento de Linguagem Natural: técnicas para lidar com texto (classificar, extrair, gerar, etc.).",
+        "tokenização": "Quebra de texto em unidades (tokens) para processamento.",
+        "embeddings": "Vetores que representam palavras/frases/textos em um espaço numérico, capturando semântica.",
+        "transformers": "Arquitetura moderna (base de modelos como BERT/GPT) com atenção para entender contexto."
+      },
+      lessons: {
+        ml_basics: [
+          { title: "ML: o que é e como funciona", key: "ml1", answer: buildAnswer(
+            "Machine Learning é ensinar um modelo a aprender padrões a partir de dados.",
+            "Em vez de codar regras (se/então) para tudo, você fornece exemplos e o modelo aprende uma função que mapeia entradas (X) para saídas (y).",
+            "Ex.: prever churn: X = comportamento do cliente, y = sai/não sai.",
+            "Qual seu caso: você quer aprender para entrevista, projeto real ou só base teórica?",
+            "Se quiser, te guio pela trilha ML essencial (3 passos) ou já montamos um projeto simples."
+          )}
+        ],
+        pln_basics: [
+          { title: "PLN: do texto para números", key: "pln1", answer: buildAnswer(
+            "PLN começa transformando texto em uma forma que modelos conseguem usar: números.",
+            "O fluxo clássico é: limpar texto → tokenizar → representar (BoW/TF-IDF/embeddings) → treinar um modelo → avaliar.",
+            "Ex.: classificar sentimento: 'amei' tende a vetor próximo de 'ótimo', e longe de 'horrível' (em embeddings).",
+            "Quer uma visão clássica (TF-IDF) ou moderna (transformers/embeddings)?",
+            "Posso te mostrar um exemplo em Python com scikit-learn (TF-IDF + Logistic Regression)."
+          )}
+        ]
+      },
+      examples: {
+        python_tfidf_sentiment: `from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report
+
+texts = [
+  "amei o produto, chegou rápido", "horrível, veio quebrado", "muito bom e útil",
+  "péssima experiência, não recomendo", "excelente atendimento", "não gostei, atrasou"
+]
+labels = [1,0,1,0,1,0]  # 1=positivo, 0=negativo
+
+X_train, X_test, y_train, y_test = train_test_split(texts, labels, test_size=0.33, random_state=42)
+
+model = Pipeline([
+  ("tfidf", TfidfVectorizer()),
+  ("clf", LogisticRegression(max_iter=1000))
+])
+
+model.fit(X_train, y_train)
+pred = model.predict(X_test)
+
+print(classification_report(y_test, pred))`
+      },
+      trails: {
+        ml: [
+          "1) Conceitos: supervisionado vs não supervisionado, treino/teste, overfitting",
+          "2) Modelos: regressão logística, árvores, random forest, gradient boosting",
+          "3) Avaliação: métricas, validação cruzada, tuning, pipeline e leakage"
+        ],
+        pln: [
+          "1) Texto → features: tokenização, TF-IDF, n-grams",
+          "2) Embeddings: word2vec, sentence embeddings, busca semântica",
+          "3) Transformers: BERT, fine-tuning, avaliação e erros comuns"
+        ]
+      },
+      projects: {
+        guided: [
+          "Projeto 1: Detector de Spam (TF-IDF + Logistic Regression)",
+          "Projeto 2: Sentimento em reviews (TF-IDF + Linear SVM)",
+          "Projeto 3: FAQ semântica (embeddings + similaridade + top-k)"
+        ]
+      },
+      quizzes: {
+        ml: [
+          {
+            q: "Overfitting é quando…",
+            options: ["o modelo vai bem no treino e mal no teste", "o modelo erra tudo no treino", "o modelo não usa validação"],
+            correct: 0,
+            explain: "Overfitting = memorizar treino e perder generalização (teste pior)."
+          },
+          {
+            q: "Quando você prioriza F1-score?",
+            options: ["quando classes são balanceadas e custo é igual", "quando há desbalanceamento e quer equilíbrio entre precision/recall", "apenas em regressão"],
+            correct: 1,
+            explain: "F1 é útil quando existe desbalanceamento e você quer trade-off precision/recall."
+          }
+        ],
+        pln: [
+          {
+            q: "Embeddings servem para…",
+            options: ["transformar texto em vetores numéricos com semântica", "corrigir ortografia automaticamente", "substituir validação"],
+            correct: 0,
+            explain: "Embeddings representam significado em vetores, permitindo similaridade e melhor modelagem."
+          },
+          {
+            q: "Transformers se destacam por…",
+            options: ["atenção ao contexto em sequência", "usar apenas BoW", "não precisar de dados"],
+            correct: 0,
+            explain: "Atenção (self-attention) ajuda a capturar dependências e contexto."
+          }
+        ]
+      }
+    };
+
+    // ---------- UI helpers ----------
+    function nowTime() {
+      const d = new Date();
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function addMessage(role, text) {
+      const wrap = document.createElement("div");
+      wrap.className = `msg ${role}`;
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.innerHTML = `<span>${role === "user" ? "Você" : "Coach"}</span><span>${nowTime()}</span>`;
+
+      const content = document.createElement("div");
+      content.className = "content";
+
+      const parts = splitByCodeFences(text);
+      parts.forEach(part => {
+        if (part.type === "code") {
+          const code = document.createElement("code");
+          code.textContent = part.value.trim();
+          content.appendChild(code);
+        } else {
+          const p = document.createElement("div");
+          p.textContent = part.value;
+          content.appendChild(p);
+        }
+      });
+
+      wrap.appendChild(meta);
+      wrap.appendChild(content);
+      messagesEl.appendChild(wrap);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function splitByCodeFences(text) {
+      const out = [];
+      const re = /```([\s\S]*?)```/g;
+      let last = 0;
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        if (m.index > last) out.push({ type: "text", value: text.slice(last, m.index) });
+        out.push({ type: "code", value: m[1] });
+        last = m.index + m[0].length;
+      }
+      if (last < text.length) out.push({ type: "text", value: text.slice(last) });
+      return out;
+    }
+
+    // ---------- Core response building ----------
+    function buildAnswer(summary, explanation, example, check, next) {
+      return [
+        `✅ Resumo: ${summary}`,
+        `🧠 Explicação: ${explanation}`,
+        `🧪 Exemplo: ${example}`,
+        `❓ Checagem: ${check}`,
+        `➜ Próximo passo: ${next}`
+      ].join("\n\n");
+    }
+
+    function normalize(text) {
+      return text.trim().toLowerCase();
+    }
+
+    function detectIntent(text) {
+      const t = normalize(text);
+
+      if (t === "reset" || t.includes("reiniciar")) return { intent: "reset" };
+      if (t.startsWith("glossário:") || t.startsWith("glossario:")) {
+        return { intent: "glossary", term: t.split(":")[1]?.trim() || "" };
+      }
+
+      if (t.includes("trilha ml")) return { intent: "trail", domain: "ml" };
+      if (t.includes("trilha pln") || t.includes("trilha nlp")) return { intent: "trail", domain: "pln" };
+
+      if (t.includes("quiz ml")) return { intent: "quiz", domain: "ml" };
+      if (t.includes("quiz pln") || t.includes("quiz nlp")) return { intent: "quiz", domain: "pln" };
+
+      if (t.includes("exemplo python") || t.includes("código python") || t.includes("codigo python")) {
+        return { intent: "example_python" };
+      }
+
+      if (t.includes("me explica simples") || t.includes("explica simples") || t.includes("como se eu tivesse 10")) {
+        return { intent: "simple_mode" };
+      }
+
+      if (t.includes("projeto guiado") || t.includes("projeto")) {
+        return { intent: "project_guided" };
+      }
+
+      if (state.quiz && /^[abc123]$/.test(t)) return { intent: "quiz_answer", answer: t };
+
+      const topics = ["overfitting","underfitting","precision","recall","f1","tokenização","tokenizacao","embeddings","transformers","machine learning","pln","nlp","validação","validacao"];
+      for (const k of topics) if (t.includes(k)) return { intent: "topic", topic: k };
+
+      return { intent: "fallback" };
+    }
+
+    function onboardingReply(userText) {
+      const t = normalize(userText);
+
+      if (state.onboardingStep === 0) {
+        state.onboardingStep = 1;
+        return buildAnswer(
+          "Antes de começar, vou te conhecer rapidinho.",
+          "Com 4 respostas eu monto sua trilha e deixo as aulas no seu ritmo.",
+          "Pergunta 1/4: qual seu nível hoje? (iniciante / intermediário / avançado)",
+          "Responda com uma dessas três opções.",
+          "Depois disso eu pergunto objetivo e estilo."
+        );
+      }
+
+      if (state.onboardingStep === 1) {
+        if (t.includes("inic")) state.user.level = "iniciante";
+        else if (t.includes("inter")) state.user.level = "intermediário";
+        else if (t.includes("avan")) state.user.level = "avançado";
+        else return "Me diz seu nível com uma das opções: iniciante / intermediário / avançado.";
+
+        state.onboardingStep = 2;
+        return `Fechado: nível **${state.user.level}**.\n\nPergunta 2/4: qual seu objetivo? (aprender / entrevista / projeto / faculdade)`;
+      }
+
+      if (state.onboardingStep === 2) {
+        if (t.includes("aprend")) state.user.goal = "aprender";
+        else if (t.includes("entrev")) state.user.goal = "entrevista";
+        else if (t.includes("proj")) state.user.goal = "projeto";
+        else if (t.includes("facul")) state.user.goal = "faculdade";
+        else return "Objetivo: aprender / entrevista / projeto / faculdade?";
+
+        state.onboardingStep = 3;
+        return `Boa. Objetivo: **${state.user.goal}**.\n\nPergunta 3/4: você prefere (teoria + analogias) ou (direto no código) ou (exercícios)?`;
+      }
+
+      if (state.onboardingStep === 3) {
+        if (t.includes("teoria") || t.includes("analogia")) state.user.style = "teoria";
+        else if (t.includes("cód") || t.includes("cod") || t.includes("python")) state.user.style = "codigo";
+        else if (t.includes("exerc")) state.user.style = "exercicios";
+        else return "Preferência: teoria / código / exercícios?";
+
+        state.onboardingStep = 4;
+        return `Perfeito. Estilo: **${state.user.style}**.\n\nPergunta 4/4: quanto tempo por dia? (10m / 30m / 1h)`;
+      }
+
+      if (state.onboardingStep === 4) {
+        if (t.includes("10")) state.user.time = "10m";
+        else if (t.includes("30")) state.user.time = "30m";
+        else if (t.includes("1h") || t.includes("60")) state.user.time = "1h";
+        else return "Tempo por dia: 10m / 30m / 1h ?";
+
+        state.onboardingStep = 5;
+        return buildAnswer(
+          "Onboarding completo. Vou te guiar com microaulas no seu ritmo.",
+          `Configuração: nível=${state.user.level}, objetivo=${state.user.goal}, estilo=${state.user.style}, tempo=${state.user.time}.`,
+          "Você pode pedir: 'trilha ml', 'trilha pln', 'quiz ml', 'overfitting', 'embeddings', 'exemplo python'.",
+          "Qual tema você quer começar agora: ML base ou PLN base?",
+          "Se você disser 'ML', eu começo pela aula 1 e te dou um exercício curtinho."
+        );
+      }
+
+      return null;
+    }
+
+    function topicReply(topic) {
+      const t = topic;
+
+      if (t.includes("overfitting")) {
+        return buildAnswer(
+          "Overfitting é quando o modelo ‘decora’ o treino e piora em dados novos.",
+          "Ele aprende ruídos/padrões específicos do treino em vez do padrão geral. Acontece com modelo complexo + poucos dados ou features vazando informação.",
+          "Sinal típico: treino muito alto (ex.: 99%) e teste bem menor (ex.: 70%).",
+          "No seu caso, você está vendo treino alto e teste baixo? (sim/não)",
+          "Se sim, eu te mostro 3 correções: regularização, validação correta e reduzir complexidade (com exemplo)."
+        );
+      }
+
+      if (t.includes("underfitting")) {
+        return buildAnswer(
+          "Underfitting é quando o modelo é simples demais e não aprende nem o treino.",
+          "Você vê desempenho baixo tanto em treino quanto em teste. Geralmente falta capacidade do modelo, features ou ajuste adequado.",
+          "Ex.: uma regressão linear tentando aprender um padrão muito não-linear.",
+          "Você está com métricas baixas no treino também?",
+          "Se estiver, eu sugiro: melhorar features, tentar modelo mais expressivo e ajustar hiperparâmetros."
+        );
+      }
+
+      if (t.includes("precision")) {
+        return buildAnswer(
+          "Precisão mede ‘quão confiáveis’ são os positivos previstos.",
+          "Precision = VP / (VP + FP). Boa quando falso positivo é caro (ex.: bloquear pagamento legítimo).",
+          "Se o modelo marcou 100 como spam e 90 eram spam, precision = 0,90.",
+          "No seu contexto, falso positivo é caro ou falso negativo é pior?",
+          "Se falso negativo é pior, provavelmente recall importa mais."
+        );
+      }
+
+      if (t.includes("recall")) {
+        return buildAnswer(
+          "Recall mede ‘quantos positivos reais’ o modelo conseguiu encontrar.",
+          "Recall = VP / (VP + FN). Importa quando perder um positivo é caro (ex.: não detectar fraude/doença).",
+          "Se existiam 100 fraudes e você pegou 80, recall = 0,80.",
+          "Você prefere errar por excesso (mais FP) para pegar quase tudo?",
+          "Se sim, a gente otimiza recall e controla precision com threshold."
+        );
+      }
+
+      if (t === "f1" || t.includes("f1")) {
+        return buildAnswer(
+          "F1 equilibra precision e recall em um único número.",
+          "F1 = 2 * (precision*recall)/(precision+recall). Útil quando há desbalanceamento e você quer equilíbrio.",
+          "Ex.: precision=0,8 e recall=0,6 → F1 ≈ 0,686.",
+          "Seu dataset é desbalanceado? (ex.: 90% não-spam, 10% spam)",
+          "Se for, além de F1, vale olhar matriz de confusão e ajustar threshold."
+        );
+      }
+
+      if (t.includes("token")) {
+        return buildAnswer(
+          "Tokenização é quebrar o texto em unidades (tokens) para processamento.",
+          "Pode ser por palavras, subpalavras (BPE/WordPiece) ou caracteres. Em transformers, subpalavras ajudam com vocabulário grande.",
+          "Ex.: 'inteligência artificial' → ['inteligência', 'artificial'] (palavras) ou subpalavras.",
+          "Você quer o jeito simples (word tokens) ou o moderno (subword tokens)?",
+          "Se quiser, eu te explico BPE em 2 minutos com analogia."
+        );
+      }
+
+      if (t.includes("embeddings")) {
+        return buildAnswer(
+          "Embeddings são vetores que representam significado (semântica) de texto.",
+          "Textos semelhantes ficam próximos no espaço vetorial. Isso ajuda em busca semântica, clustering, recomendação e classificação.",
+          "Ex.: 'amei' fica mais perto de 'ótimo' do que de 'horrível' (em geral).",
+          "Você quer usar embeddings para busca (FAQ) ou para classificação (sentimento/spam)?",
+          "Se for FAQ, o próximo passo é: gerar embeddings + similaridade + top-k."
+        );
+      }
+
+      if (t.includes("transformers")) {
+        return buildAnswer(
+          "Transformers são modelos que usam atenção para entender contexto em sequências.",
+          "Diferente de BoW, eles capturam dependências e significado com contexto (palavra muda de sentido conforme a frase).",
+          "Ex.: 'banco' (financeiro) vs 'banco' (sentar) — o contexto muda a representação.",
+          "Você quer entender o conceito (atenção) ou já ir para uso prático (fine-tuning)?",
+          "Se você disser 'prático', eu te passo um caminho com dataset e avaliação."
+        );
+      }
+
+      if (t.includes("pln") || t.includes("nlp")) return KNOWLEDGE.lessons.pln_basics[0].answer;
+
+      if (t.includes("valida")) {
+        return buildAnswer(
+          "Validação é como você mede generalização (se o modelo funciona fora do treino).",
+          "O básico é treino/teste. Mais robusto é cross-validation. O cuidado nº1 é evitar leakage (informação do futuro no treino).",
+          "Ex.: normalizar usando dados do teste antes do split → leakage.",
+          "Você está usando split simples ou cross-validation?",
+          "Se você me disser como está separando os dados, eu aponto riscos e melhorias."
+        );
+      }
+
+      return KNOWLEDGE.lessons.ml_basics[0].answer;
+    }
+
+    function trailReply(domain) {
+      const lines = KNOWLEDGE.trails[domain];
+      const title = domain === "ml" ? "Trilha ML Essencial" : "Trilha PLN Essencial";
+      return buildAnswer(
+        `${title} (3 passos)`,
+        "Eu vou seguindo com microaulas curtas e checagem de entendimento.",
+        lines.join("\n"),
+        "Quer começar pelo passo 1 agora? (sim/não)",
+        "Se sim, eu te mando a aula 1 + um exercício de 2 minutos."
+      );
+    }
+
+    function projectGuidedReply() {
+      return buildAnswer(
+        "Vamos montar um projeto prático e simples que vira portfólio.",
+        "Projetos curtos te dão entendimento real: dados → pipeline → treino → métrica → iteração.",
+        KNOWLEDGE.projects.guided.join("\n"),
+        "Qual você prefere: Spam, Sentimento ou FAQ semântica?",
+        "Escolheu? Eu te passo a lista de arquivos e o primeiro código."
+      );
+    }
+
+    function examplePythonReply() {
+      return buildAnswer(
+        "Aqui vai um exemplo pronto (TF-IDF + Regressão Logística) para classificação de texto.",
+        "Você consegue rodar em poucos minutos e já ver métricas. Depois dá pra evoluir para SVM ou transformers.",
+        "```" + KNOWLEDGE.examples.python_tfidf_sentiment + "```",
+        "Quer que eu adapte para spam (PT-BR) ou sentimento (reviews)?",
+        "Se você me disser o tipo de texto, eu ajusto dataset e métricas."
+      );
+    }
+
+    function simpleModeReply(lastTopic) {
+      const topic = lastTopic || "machine learning";
+      if (topic.includes("overfitting")) {
+        return "✅ Resumo: Overfitting é como decorar a prova.\n\n🧠 Explicação: Você acerta tudo no treino porque memorizou, mas quando aparece uma pergunta nova, erra.\n\n➜ Próximo passo: Quer 3 jeitos simples de evitar overfitting?";
+      }
+      if (topic.includes("embeddings")) {
+        return "✅ Resumo: Embeddings são ‘coordenadas’ do significado.\n\n🧠 Explicação: Palavras/frases parecidas ficam perto, diferentes ficam longe.\n\n➜ Próximo passo: Quer um exemplo de busca semântica (FAQ) em 3 passos?";
+      }
+      return "✅ Resumo: ML é aprender com exemplos.\n\n🧠 Explicação: Em vez de regras fixas, você mostra dados e o modelo aprende padrões.\n\n➜ Próximo passo: Quer um exemplo simples com texto (PLN) ou números (ML)?";
+    }
+
+    function startQuiz(domain) {
+      state.quiz = { domain, idx: 0, score: 0 };
+      return renderQuizQuestion();
+    }
+
+    function renderQuizQuestion() {
+      const { domain, idx } = state.quiz;
+      const item = KNOWLEDGE.quizzes[domain][idx];
+      const opts = item.options.map((o, i) => `${String.fromCharCode(65+i)}) ${o}`).join("\n");
+      return buildAnswer(
+        `Quiz ${domain.toUpperCase()} — Pergunta ${idx+1}/${KNOWLEDGE.quizzes[domain].length}`,
+        item.q,
+        opts,
+        "Responda com A, B, C (ou 1, 2, 3).",
+        "Eu corrijo e explico em seguida."
+      );
+    }
+
+    function handleQuizAnswer(ansRaw) {
+      const ans = normalize(ansRaw);
+      const { domain, idx } = state.quiz;
+      const item = KNOWLEDGE.quizzes[domain][idx];
+
+      const map = { "a":0, "b":1, "c":2, "1":0, "2":1, "3":2 };
+      const chosen = map[ans];
+      let msg = "";
+
+      if (chosen === item.correct) {
+        state.quiz.score += 1;
+        msg += `✅ Acertou! ${item.explain}`;
+      } else {
+        msg += `❌ Quase. Resposta correta: ${String.fromCharCode(65+item.correct)}.\n${item.explain}`;
+      }
+
+      state.quiz.idx += 1;
+
+      if (state.quiz.idx >= KNOWLEDGE.quizzes[domain].length) {
+        const total = KNOWLEDGE.quizzes[domain].length;
+        const score = state.quiz.score;
+        state.quiz = null;
+        msg += `\n\n🏁 Fim do quiz! Sua pontuação: ${score}/${total}.\n\n➜ Próximo passo: Quer revisar algum tema (ex.: overfitting, embeddings) ou iniciar uma trilha?`;
+        return msg;
+      }
+
+      return msg + "\n\n" + renderQuizQuestion();
+    }
+
+    function resetAll() {
+      state.user = { name:null, level:null, goal:null, style:null, time:null };
+      state.onboardingStep = 0;
+      state.lastTopic = null;
+      state.quiz = null;
+      messagesEl.innerHTML = "";
+      greet();
+    }
+
+    function respond(userText) {
+      if (state.onboardingStep < 5) {
+        const r = onboardingReply(userText);
+        if (r) return r;
+      }
+
+      const { intent, domain, term, topic, answer } = detectIntent(userText);
+
+      if (intent === "reset") {
+        resetAll();
+        return null;
+      }
+
+      if (intent === "glossary") {
+        const key = (term || "").trim();
+        if (!key) return "Escreva assim: glossário: embeddings";
+        const found = KNOWLEDGE.glossary[key] || KNOWLEDGE.glossary[normalize(key)] || null;
+        if (!found) return `Não achei "${key}" no meu glossário. Quer que eu explique com exemplo prático?`;
+        state.lastTopic = key;
+        return buildAnswer(
+          `Glossário: ${key}`,
+          found,
+          "Se quiser, eu também dou um exemplo aplicado ao seu caso.",
+          "Quer um exemplo prático agora? (sim/não)",
+          "Você pode pedir: 'exemplo python' ou 'me explica simples'."
+        );
+      }
+
+      if (intent === "trail") return trailReply(domain);
+      if (intent === "project_guided") return projectGuidedReply();
+      if (intent === "example_python") return examplePythonReply();
+      if (intent === "simple_mode") return simpleModeReply(state.lastTopic);
+      if (intent === "quiz") return startQuiz(domain);
+      if (intent === "quiz_answer") return handleQuizAnswer(answer);
+      if (intent === "topic") {
+        state.lastTopic = topic;
+        return topicReply(topic);
+      }
+
+      return buildAnswer(
+        "Eu posso te ajudar nisso, só preciso de 1 detalhe.",
+        "Me diga qual é o seu foco agora: ML (modelos/métricas) ou PLN (texto/embeddings/transformers).",
+        "Exemplos que funcionam bem: 'overfitting', 'trilha ml', 'quiz pln', 'glossário: transformers'.",
+        "Você quer mais teoria ou mais prática?",
+        "Se você disser 'prática', eu te passo um mini projeto em 3 passos."
+      );
+    }
+
+    function greet() {
+      addMessage("bot", buildAnswer(
+        "Eu sou seu ML&PLN Coach (modo local).",
+        "Vou te ensinar Machine Learning e PLN em microaulas, com exemplos e quizzes.",
+        "Primeiro: um onboarding bem rápido (4 perguntas).",
+        "Topa? Responda qualquer coisa para começar.",
+        "Dica: você pode usar os botões rápidos também."
+      ));
+    }
+
+    composer.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = inputEl.value.trim();
+      if (!text) return;
+      inputEl.value = "";
+      addMessage("user", text);
+
+      const reply = respond(text);
+      if (reply) addMessage("bot", reply);
+    });
+
+    document.querySelectorAll("[data-quick]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const text = btn.getAttribute("data-quick");
+        inputEl.value = text;
+        composer.requestSubmit();
+      });
+    });
+
+    greet();
+  </script>
+</body>
+</html>
